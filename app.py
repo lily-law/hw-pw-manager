@@ -1,38 +1,107 @@
-from xkcdpass import xkcd_password as xp
-from flask import Flask, render_template
 import math
+import keypad
+import display
+import gen
 
-app = Flask(__name__)
-
-def gen_username (nWords=2, delimiter='-', acronym=False):
-    # create a wordlist from the default wordfile
-    wordfile = xp.locate_wordfile()
-    mywords = xp.generate_wordlist(wordfile=wordfile, min_length=1, max_length=10)
-
-    return (xp.generate_xkcdpassword(mywords, numwords=nWords, acrostic=acronym, delimiter=delimiter))
-
-def gen_password (nWords=6, acronym=False):
-    # create a wordlist from the default wordfile
-    wordfile = xp.locate_wordfile()
-    mywords = xp.generate_wordlist(wordfile=wordfile, min_length=4, max_length=8)
-    gen = xp.generate_xkcdpassword(mywords, numwords=nWords, acrostic=acronym, random_delimiters = True, valid_delimiters = ['_', '.', '-'], case = "random")
-
-    return (gen[1: len(gen)-1])
-
-# Hold onto generated username and password so they can be seperated refreshed
-next_entry = {
-    'username': gen_username(),
-    'password': gen_password()
+data = {
+    'entries': []
 }
 
-@app.route('/')
-def new_login():
-    return render_template('index.html', username=next_entry['username'], password=next_entry['password'])
+state = {
+    'service': '',
+    'username': gen_username(),
+    'password': gen_password(),
+    'entries': [],
+    'selected_entry': False,
+    'selected_row': 'service',
+    'view': 'browse',
+    'page': 0,
+    'inputting': False,
+    'pin': '',
+    'key_layer': 'num',
+    'key_buffer': ''
+}
 
-@app.route('/gen/password')
-def new_password():
-    next_entry['password'] = gen_password()
+def set_view(to):
+    state['view'] = to 
+    display.views[view](**state)
 
-@app.route('/gen/username')
-def new_username():
-    next_entry['username'] = gen_username()
+def prev_page():
+    if state['page'] > 0:
+        state['page'] = state['page'] - 1
+    return
+
+def next_page():
+    if data['entries'] > (state['page'] + 1) * 6:
+        state['page'] = state['page'] + 1
+    return
+
+def handle_fn_keys(keys):
+    if len(keys) > 0:
+        if 'FN1' in keys: #A
+            if state['view'] == 'browse':
+                # add new entry
+                set_view('edit')
+            elif state['view'] == 'view' and '#' in keys and state['selected_entry']:
+                # selected edit entry
+                set_view('edit')
+            elif state['view'] == 'edit':
+                # start inputing text
+                state['inputting'] = True
+
+        elif 'FN2' in keys: #B
+            return
+        elif 'FN3' in keys: #C
+            return
+        elif 'FN4' in keys: #D
+            if state['inputting']: 
+                state['inputting'] = False
+                # todo save inputs
+                # append/update selected_entry to entries
+                # reset inputs
+            return
+
+def handle_keys(keys): 
+    if len(keys) > 0: 
+        if state['view'] == 'browse':
+            if keys[0] in range(1, 7) and keys[0] < len(entries):
+                state['selected_entry'] = keys[0]
+            elif keys[0] == '*':
+                prev_page()
+            elif keys[0] == '#':
+                next_page()
+        elif state['view'] == 'view':
+            if keys[0] == 1: 
+                state['selected_row'] = 'service'
+            elif keys[0] == 2: 
+                state['selected_row'] = 'username'
+            elif keys[0] == 3: 
+                state['selected_row'] = 'password'
+        elif state['view'] == 'edit':
+            if state['inputting']: 
+                # if done
+                if keys[0] == 'D':
+                    state['inputting'] = False
+                    # todo save inputs
+                    # append/update selected_entry to entries
+                    # reset inputs
+                else:
+                    # append to input
+                    if not state['key_buffer'] or keys[0] in state['key_buffer']:
+                        state['key_buffer'] += keys[0]
+                    else:
+                        value = get_key_value(state['key_buffer'])
+                        state[state['inputting']] += value
+                    
+        else: 
+            set_view('browse')
+
+keypad.setup()
+
+while True:
+    # check for keypress
+    keys = keypad.scan()
+    handle_fn_keys(keys.pressed)
+    handle_keys(keys.released)
+
+keypad.cleanup()
