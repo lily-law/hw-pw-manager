@@ -15,6 +15,14 @@ device = ssd1306(serial)
 font_size = 8
 # at size 8: 16 chars long 8 lines
 
+def welcome(**args): 
+  with canvas(device) as draw:
+    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.text((font_size * 2, font_size * 4), "Welcome", fill="white")
+    draw.text((font_size * 4, 0), "Press A to make", fill="white")
+    draw.text((font_size * 5, 0), "your first entry", fill="white")
+    draw.text((font_size * 7, 0), "Press D to exit", fill="white")
+
 def lock(pin, **args):
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, outline="white", fill="black")
@@ -78,6 +86,12 @@ def shutdown(**args):
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, outline="white", fill="black")
     draw.text((font_size * 3, font_size * 3), "Shuting down...", fill="white")
+
+def error(msg):
+  with canvas(device) as draw:
+    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.text((font_size * 0, 0), f"Error: {msg}", fill="white")
+    draw.text((font_size * 7, 0), "C:continue", fill="white")
 
 views = {
   'lock': lock,
