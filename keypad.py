@@ -14,16 +14,9 @@ key_code_layers = {
     [['toggleCaps'], ['a','b','c'], ['d','e','f'], ['FN1']],
     [['g','h','i'], ['j','k','l'],['m','n','o'], ['FN2']],
     [['p','q','r','s'],['t','u','v'],['w','x','y','z'], ['FN3']],
-    [['toggleLayer'], ['0'], ['.','-','@','_'], ['FN4']]
+    [['.', '-', '_', '~', '\'', ','], ['@','!','&','$','?','%'], ['/',';',':','(',')','[',']','=','+'], ['FN4']]   
   ],
-  'long': [
-    [['toggleCaps'], ['a','b','c'], ['d','e','f'], ['FN1']],
-    [['g','h','i'], ['j','k','l'],['m','n','o'], ['FN2']],
-    [['p','q','r','s'],['t','u','v'],['w','x','y','z'], ['FN3']],
-    [['toggleLayer'], ['0'], ['.','-','@','_'], ['FN4']]
-  ]
 }
-layer = 'num'
 caps_lock = False
 
 def setup():
@@ -47,7 +40,7 @@ def reset_repeat_pressed():
   last_released = 'none'
   repeat_press_count = 0
 
-def scan():
+def scan(layer = 'num'):
   keys_released = []
   for col_pin in range(4):
     GPIO.output(col_pin, GPIO.HIGH)
@@ -63,17 +56,12 @@ def scan():
             repeat_press_count = repeat_press_count + 1
           else:
             repeat_press_count = 0
-          # check if key was long pressed
-          if keys_pressed.count(key_code) > 9:
-            key_code = key_code_layers['long'][row_pin][col_pin]
+
           if key_code == 'toggleCap':
             caps_lock = not caps_lock
-          elif key_code == 'toggleLayer':
-            if layer == 'num':
-              layer = 'char'
-            else: 
-              layer = 'num'
           else:
+            if keys_pressed.count(key_code) > 9: # if key was long pressed default to num layer
+              key_code = key_code_layers['num'][row_pin][col_pin]
             # add key value to keys released
             val = key_code[repeat_press_count % len(key_code)]
             if caps_lock:
@@ -83,7 +71,7 @@ def scan():
         while key_code in keys_pressed:
           keys_pressed.remove(key_code)
     GPIO.output(col_pin, GPIO.LOW)
-  time.sleep(0.1)
+  time.sleep(0.1) # number of duplicate codes in keys_pressed * 1/10 second give length of press
   return {
     'pressed': keys_pressed,
     'released': keys_released
