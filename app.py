@@ -3,6 +3,8 @@ import keypad
 import display
 import gen
 import re
+import os
+from disk import Entries
 
 
 state = {
@@ -19,29 +21,34 @@ state = {
     'results_per_page': 5,
     'inputting': False,
     'pin': '',
+    'pin_token': '',
     'key_layer': 'num',
-    'key_buffer': ''
+    'key_buffer': '',
+    'storage': False
 }
+
+def decrypt_data():
+    return
+
+
+
+def set_error(msg):
+    state['view'] = 'error'
+    display.views['error'](msg)
 
 
 def load_entries():
     set_view('loading')
-    # TODO load data from file
-    # decrypt data
-    # JSON parse data
-    # set entries into state
-    # set n_pages state
-    return
+    # load data from file
+    state['entries'] = state['storage'].load()
+    # reset inputs, update states and return to browse view
+    exit_editing()
 
 def save_entries():
     set_view('saving')
-    # TODO JSON stringify state['entries']
-    # encrypt data
-    # save data to new file
-    # rename old file
-    # rename new file
-    # delete old file
-    return
+    state['storage'].save(state['entries'])
+    # reset inputs, update states and return to browse view
+    exit_editing()
 
 
 def render_view():
@@ -50,12 +57,20 @@ def render_view():
 def set_view(to):
     state['view'] = to 
     if to == 'browse':
-        set_page_entry_indexes()
+        if len(state['entries']) > 0:
+            state['selected_entry_index'] = False
+            set_page_entry_indexes()
+        else:
+            # New pin/user
+            state['view'] = 'welcome' 
+            render_view()
     else:
         if to == 'lock':
-            state['pin'] = ''
+            state['storage'] = False
             state['inputting'] = True
             state['entries'] = []
+        if to == 'welcome' and len(state['entries']) > 0:
+            state['view'] = 'browse'
         render_view()
 
 def set_page_entry_indexes():
@@ -82,7 +97,6 @@ def exit_editing():
     state['password'] = ''
     state['inputting'] = False
     state['n_pages'] = math.ceil(state['entries'] / state['results_per_page'])
-    state['selected_entry_index'] = False
     set_view('browse')
 
 def power_down():
@@ -94,7 +108,7 @@ def power_down():
 def handle_fn_keys(keys):
     if len(keys) > 0:
         if 'FN1' in keys: #A
-            if state['view'] == 'browse': # add new entry
+            if state['view'] == 'browse' or state['view'] == 'welcome': # add new entry
                 # set states to plus 1 entry from last page 
                 n_entries = len(state['entries'])
                 state['n_pages'] = math.ceil((n_entries + 1) / state['results_per_page'])
@@ -123,10 +137,17 @@ def handle_fn_keys(keys):
             elif state['view'] == 'edit': # cancel entry/edit
                 # reset inputs, update states and return to browse view
                 exit_editing()
+            elif state['view'] == 'error': # continue 
+                if len(state['entries'] > 0):
+                    # reset inputs, update states and return to browse view
+                    exit_editing()
+                else:
+                    set_view('lock')
         elif 'FN4' in keys: #D
             if state['view'] == 'lock': # submit pin
+                state['storage'] = Entries(state['pin'], set_error)
+                state['pin'] = ''
                 load_entries()
-                set_view('browse')
             elif state['view'] == 'edit' and state['inputting']: # save entry
                 # update selected_entry
                 entry = state['entries'][state['selected_entry_index']]
@@ -135,15 +156,13 @@ def handle_fn_keys(keys):
                 entry['password'] = state['password']
                 # Save entries state to disk
                 save_entries()
-                # reset inputs, update states and return to browse view
-                exit_editing()
             elif state['view'] == 'view' and keys.count('*') > 9: # delete entry if * has been held for 1 second
                 # Remove entry from state
                 state['entries'].remove(state['selected_entry_index'])
                 # Save entries state to disk
                 save_entries()
-                # reset inputs, update states and return to browse view
-                exit_editing()
+            elif state['view'] == 'welcome':
+                set_view('lock')
 
 def select_entry_row(keys):
     if '1' in keys: 
