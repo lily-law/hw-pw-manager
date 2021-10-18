@@ -15,20 +15,40 @@ device = ssd1306(serial)
 font_size = 8
 # at size 8: 16 chars long 8 lines
 
-def browse(entries, page, n_pages, **args):
+def lock(pin, **args):
+  with canvas(device) as draw:
+    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.text((font_size * 0, 0), "Enter PIN", fill="white")
+    for char, i in pin:
+      draw.text((font_size * 1, font_size * i), "*", fill="white")
+    draw.text((font_size * 6, 0), "B:back", fill="white")
+    draw.text((font_size * 6, 128 - (font_size * 7)), "C:clear", fill="white")
+    draw.text((font_size * 7, 0), "D:enter", fill="white")
+
+def loading(**args): 
+  with canvas(device) as draw:
+    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.text((font_size * 3, font_size * 3), "Loading...", fill="white")
+
+def browse(entries, page_entry_indexes, page, n_pages, **args):
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, outline="white", fill="black")
     nEntries = len(entries)
-    for row in range(6):
+    for row in page_entry_indexes:
       if row < nEntries:
         entry = entries[row]
         draw.text((font_size * row, 0), f"{row}: {entry['service'][0: 6]} | {entry['username'][0: 6]}", fill="white")
-    draw.text((font_size * 6, 0), f"Page{page}/{n_pages}", fill="white")
-    draw.text((font_size * 6, 128 - (font_size * 7)), f"A:add", fill="white")
-    draw.text((font_size * 7, 0), "*:prev", fill="white")
-    draw.text((font_size * 7, 128 - (font_size * 8)), "#:next", fill="white")
+    draw.text((font_size * 5, 0), f"Page{page}/{n_pages}", fill="white")
+    draw.text((font_size * 5, 128 - (font_size * 7)), f"A:add", fill="white")
+    draw.text((font_size * 6, 0), "*:prev", fill="white")
+    draw.text((font_size * 6, 128 - (font_size * 8)), "#:next", fill="white")
+    draw.text((font_size * 7, 0), "*+C(hold):lock", fill="white")
 
-def view(service, username, password, **args):
+def view(selected_entry_index, entries, **args):
+  entry = entries[selected_entry_index]
+  service = entry['service']
+  username = entry['username']
+  password = entry['password']
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, outline="white", fill="black")
     draw.text((font_size * 0, 0), f"1: {service[0: 13]}", fill="white")
@@ -45,13 +65,26 @@ def edit(service, username, password, **args):
     draw.text((font_size * 0, 0), f"1: {service[0: 13 + 16]}", fill="white")
     draw.text((font_size * 1, 0), f"2: {username[0: 13 + 16]}", fill="white")
     draw.text((font_size * 2, 0), f"3: {password[0: 13 + 16]}", fill="white")
-    draw.text((font_size * 6, 0), "A:input", fill="white")
-    draw.text((font_size * 6, 128 - (font_size * 8)), "B:select", fill="white")
-    draw.text((font_size * 7, 0), "C:gen", fill="white")
+    draw.text((font_size * 6, 0), "A:generate", fill="white")
+    draw.text((font_size * 7, 0), "C:cancel", fill="white")
     draw.text((font_size * 7, 128 - (font_size * 8)), "D:done", fill="white")
 
+def saving(**args): 
+  with canvas(device) as draw:
+    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.text((font_size * 3, font_size * 3), "Saving...", fill="white")
+
+def shutdown(**args): 
+  with canvas(device) as draw:
+    draw.rectangle(device.bounding_box, outline="white", fill="black")
+    draw.text((font_size * 3, font_size * 3), "Shuting down...", fill="white")
+
 views = {
+  'lock': lock,
+  'loading': loading,
   'browse': browse,
   'view': view,
-  'edit': edit
+  'edit': edit,
+  'saving': saving,
+  'shutdown': shutdown
 }
