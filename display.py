@@ -23,15 +23,19 @@ def welcome(**args):
     draw.text((font_size * 5, 0), "your first entry", fill="white")
     draw.text((font_size * 7, 0), "Press D to exit", fill="white")
 
-def lock(pin, **args):
+def lock(pin, user, failed_login, **args):
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, outline="white", fill="black")
-    draw.text((font_size * 0, 0), "Enter PIN", fill="white")
+    draw.text((font_size * 1, 0), "Enter User", fill="white")
+    draw.text((font_size * 2, 0), f"{user}", fill="white")
+    draw.text((font_size * 3, 0), "Enter PIN", fill="white")
     for char, i in pin:
-      draw.text((font_size * 1, font_size * i), "*", fill="white")
-    draw.text((font_size * 6, 0), "B:back", fill="white")
-    draw.text((font_size * 6, 128 - (font_size * 7)), "C:clear", fill="white")
-    draw.text((font_size * 7, 0), "D:enter", fill="white")
+      draw.text((font_size * 4, font_size * i), "*", fill="white")
+    if failed_login:
+      draw.text((font_size * 5, 1), "Incorrect PIN!", fill="white")
+    draw.text((font_size * 6, font_size * 2), "C+*(hold):off", fill="white")
+    draw.text((font_size * 7, 0), "B:back", fill="white")
+    draw.text((font_size * 7, 128 - (font_size * 7)), "D:enter", fill="white")
 
 def loading(**args): 
   with canvas(device) as draw:

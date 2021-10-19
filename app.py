@@ -13,23 +13,17 @@ state = {
     'password': '',
     'entries': [],
     'selected_entry_index': False,
-    'selected_row': 'pin',
-    'view': 'browse',
+    'selected_row': 'user',
+    'view': 'lock',
     'page': 0,
     'page_entry_indexes': [],
     'n_pages': 0,
     'results_per_page': 5,
-    'inputting': False,
+    'inputting': True,
     'pin': '',
-    'pin_token': '',
-    'key_layer': 'num',
-    'key_buffer': '',
+    'user': '',
     'storage': False
 }
-
-def decrypt_data():
-    return
-
 
 
 def set_error(msg):
@@ -69,6 +63,7 @@ def set_view(to):
             state['storage'] = False
             state['inputting'] = True
             state['entries'] = []
+            state['selected_row'] = 'user'
         if to == 'welcome' and len(state['entries']) > 0:
             state['view'] = 'browse'
         render_view()
@@ -123,9 +118,12 @@ def handle_fn_keys(keys):
                 elif state['selected_row'] == 'password':
                     state['password'] = gen.password()
         elif 'FN2' in keys: #B
-            if state['inputting'] and len(state[state['selected_row']]) > 0: # Backspace on inputing pin or entries
-                state[state['selected_row']] = state[state['selected_row']][:-1]
-            elif state['view'] == 'view' and not state['inputting']: # Back to browse view 
+            if state['inputting']:
+                if len(state[state['selected_row']]) > 0: # Backspace on inputing pin or entries
+                    state[state['selected_row']] = state[state['selected_row']][:-1]
+                elif state['view'] == 'lock': # Go back up to user input
+                    state['selected_row'] = 'user'
+            elif state['view'] == 'view': # Back to browse view 
                 set_view('browse')
         elif 'FN3' in keys: #C
             if state['view'] == 'lock' and keys.count('*') > 9: # power down if * has been held for 1 second
@@ -144,10 +142,20 @@ def handle_fn_keys(keys):
                 else:
                     set_view('lock')
         elif 'FN4' in keys: #D
-            if state['view'] == 'lock': # submit pin
-                state['storage'] = Entries(state['pin'], set_error)
-                state['pin'] = ''
-                load_entries()
+            if state['view'] == 'lock': 
+                if state['selected_row'] == 'pin': # submit pin
+                    state['storage'] = Entries(state['pin'], state['user'], set_error)
+                    if not state['storage'].valid:
+                        state['storage'] = False
+                    state['pin'] = ''
+                    state['user'] = ''
+                    if state['storage']:
+                        load_entries()
+                    else: 
+                        state['failed_login'] = True
+                        state['selected_row'] = 'user'
+                else: 
+                    state['selected_row'] = 'pin'
             elif state['view'] == 'edit' and state['inputting']: # save entry
                 # update selected_entry
                 entry = state['entries'][state['selected_entry_index']]
@@ -184,6 +192,7 @@ def handle_keys(keys):
     if len(keys) > 0: 
         if state['view'] == 'lock': # add input to pin state
             set_state_input(keys, valid_pin)
+            state['failed_login'] = False # Reset failed login indicator if active
         elif state['view'] == 'browse':
             valid_row_keys = list(filter(lambda key : re.search(rf"[1-{state['results_per_page']}]", key) and len(state['page_entry_indexes'] > int(key)), keys))
             if len(valid_row_keys) > 0: # select entry
