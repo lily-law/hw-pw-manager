@@ -153,10 +153,10 @@ def saving(**args):
 def shutdown(**args): 
     loading("Shutting down")
 
-def error(msg):
+def error(error_message, **args):
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, outline="white", fill="black")
-    line(draw, 0, f"Error: {msg}", max_rows=6)
+    line(draw, 0, f"Error: {error_message}", max_rows=6)
     line(draw, 7, "C:continue")
 
 views = {

@@ -6,6 +6,7 @@ import re
 import os
 from disk import Entries
 import time
+import output
 
 state = {
     'service': '',
@@ -24,13 +25,15 @@ state = {
     'user': '',
     'storage': False,
     'failed_login': False,
-    'loading_message': ''
+    'loading_message': '',
+    'error_message': ''
 }
 
 
 def set_error(msg):
     state['view'] = 'error'
-    display.views['error'](msg)
+    state['error_message'] = msg
+    render_view()
 
 
 def load_entries():
@@ -86,7 +89,9 @@ def next_page():
         set_page_entry_indexes()
 
 def transmit(str):
-
+    err = output.transmit(str)
+    if err:
+        set_error(err)
     return
 
 
