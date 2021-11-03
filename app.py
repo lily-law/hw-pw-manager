@@ -19,7 +19,7 @@ state = {
     'page': 0,
     'page_entry_indexes': [],
     'n_pages': 0,
-    'results_per_page': 5,
+    'results_per_page': 2,
     'inputting': False,
     'pin': '',
     'user': '',
@@ -31,9 +31,8 @@ state = {
 
 
 def set_error(msg):
-    state['view'] = 'error'
     state['error_message'] = msg
-    render_view()
+    set_view('error')
 
 
 def load_entries():
@@ -42,6 +41,7 @@ def load_entries():
     state['entries'] = state['storage'].load()
     # reset inputs, update states and return to browse view
     exit_editing()
+
 
 def save_entries():
     set_view('saving')
@@ -53,6 +53,7 @@ def save_entries():
 def render_view():
     display.views[state['view']](**state)
 
+
 def set_view(to):
     state['view'] = to 
     if to == 'browse':
@@ -61,7 +62,7 @@ def set_view(to):
             set_page_entry_indexes()
         else:
             # New pin/user
-            state['view'] = 'welcome' 
+            set_view('welcome') 
             render_view()
     else:
         if to == 'lock':
@@ -70,26 +71,31 @@ def set_view(to):
             state['entries'] = []
             state['selected_row'] = ''
         if to == 'welcome' and len(state['entries']) > 0:
-            state['view'] = 'browse'
+            set_view('browse')
         render_view()
+    enable_key_input()
+
 
 def set_page_entry_indexes():
     start = state['page'] * state['results_per_page']
     state['page_entry_indexes'] = range(start, start + state['results_per_page'])
     render_view()
 
+
 def prev_page():
     if state['page'] > 0:
         state['page'] = state['page'] - 1
         set_page_entry_indexes()
+
 
 def next_page():
     if (len(state['entries']) / state['results_per_page']) > (state['page'] + 1): # is at least one entry for page
         state['page'] = state['page'] + 1
         set_page_entry_indexes()
 
+
 def transmit(str):
-    err = output.transmit(str)
+    err = output.send(str)
     if err:
         set_error(err)
     return
@@ -120,15 +126,17 @@ def exit_editing():
     state['selected_entry_index'] = False
     set_view('browse')
 
+
 def power_down():
     set_view('shutdown')
-    os.system('systemctl poweroff')
+    os.system('sudo systemctl poweroff')
     return
 
 
 def backspace():
     if state['selected_row'] in state.keys() and len(state[state['selected_row']]) > 0: # Backspace on inputing pin or entries
         state[state['selected_row']] = state[state['selected_row']][:-1]
+
 
 def handle_fn_keys(keys):
     if len(keys) > 0:
@@ -139,7 +147,9 @@ def handle_fn_keys(keys):
                 edit_entry()
             elif state['view'] == 'edit' and state['selected_row']: # generate input
                 if state['selected_row'] == 'password':
-                    state['password'] = gen.password()
+                    state[state['selected_row']] = gen.password()
+                elif state['selected_row'] == 'service':
+                    state[state['selected_row']] = gen.service()
                 else:
                     state[state['selected_row']] = gen.username()
         elif 'FN2' in keys: #B
@@ -236,6 +246,7 @@ def set_state_input(keys, valid_reg):
             backspace()
         state[state['selected_row']] = f"{ state[state['selected_row']] }{ ''.join(valid_chars) }"
 
+
 def handle_keys(keys): 
     if len(keys) > 0: 
         if state['view'] == 'lock': # add input to pin state
@@ -248,7 +259,7 @@ def handle_keys(keys):
             state['failed_login'] = False # Reset failed login indicator if active
         elif state['view'] == 'browse':
             if not state['inputting']:
-                valid_row_keys = list(filter(lambda key : re.match(rf"[1-{state['results_per_page']}]", key) and len(state['page_entry_indexes']) > int(key), keys))
+                valid_row_keys = list(filter(lambda key : re.match(rf"[1-{state['results_per_page']}]", key) and len(state['page_entry_indexes']) >= int(key), keys))
                 if len(valid_row_keys) > 0: # select entry
                     state['selected_entry_index'] = (int(valid_row_keys[0]) - 1) + (state['page'] * state['results_per_page'])
                     set_view('view')
@@ -257,7 +268,9 @@ def handle_keys(keys):
                 elif '#' in keys:
                     next_page()
         elif state['view'] == 'view':
-            select_input_row(keys, False)
+            valid_row_keys = list(filter(lambda key : re.match(r"[1-3]", key), keys))
+            if len(valid_row_keys) > 0: # select entry
+                select_input_row(keys, False)
         elif state['view'] == 'edit':
             if state['inputting']: 
                 set_state_input(keys, valid_url_char)

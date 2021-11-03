@@ -20,13 +20,17 @@ lines = floor(64 / 8)
 
 def line(draw, row, text, col = 0, invert = False, max_rows = 1, max_cols = chars_per_line, align = "left"):
     fill="white"
-    col_start = (col * font_size[0]) + 1
-    if align == "right":
-        col_start = ((max_cols - len(text)) * font_size[0]) - col
-    elif align == "center":
-        col_start = (floor(max_cols / 2) - floor(len(text) / 2)) * font_size[0]
-    if col_start < 1:
-        col_start = 1
+    def calc_col_start(col, text_len):
+        col_start = (col * font_size[0]) + 1
+        if align == "right":
+            col_start = ((max_cols - text_len) * font_size[0]) - col
+        elif align == "center":
+            col_start = (floor(max_cols / 2) - floor(text_len / 2)) * font_size[0]
+        if col_start < 1:
+            col_start = 1
+        return col_start
+
+    col_start = calc_col_start(col, len(text))
     text_end = col_start + (len(text) * font_size[0])
     row_start = (row * font_size[1]) - 2
     row_end = row_start + (font_size[1] * ceil(len(text) / max_cols))
@@ -36,8 +40,11 @@ def line(draw, row, text, col = 0, invert = False, max_rows = 1, max_cols = char
         draw.rectangle((col_start - 1, row_start + 1, text_end + 1, row_end + 1), fill)
         fill="black"
     for r in range(max_rows):
-        if len(text) > r * max_cols:
-            line_text = text[r * max_cols: (r + 1) * max_cols]
+        if r > 0:
+            col = 0
+        if len(text) > (r * max_cols) - col:
+            line_text = text[r * max_cols: ((r + 1) * max_cols) - col]
+            col_start = calc_col_start(col, len(line_text))
             if r + 1 == max_rows and len(text) > (r + 1) * max_cols: # last row
                 line_text = line_text[0: max_cols - 3] + '...'
             draw.text((col_start, row_start + (r * font_size[1])), line_text, fill)
@@ -94,13 +101,13 @@ def browse(entries, page_entry_indexes, page, n_pages, **args):
     draw.rectangle(device.bounding_box, fill="black")
     line(draw, 0, f"Page{page + 1}/{n_pages}", align="center")
     nEntries = len(entries)
-    for row in page_entry_indexes:
+    for r, row in enumerate(page_entry_indexes):
       if row < nEntries:
         entry = entries[row]
-        row_start = (row + 1) + (row * 2) 
-        line(draw, row_start, f"{row + 1}: ")
+        row_start = (r + 1.5) + r
+        line(draw, row_start, f"{r + 1}: ")
         line(draw, row_start, entry['username'], 3, max_cols=chars_per_line - 3)
-        line(draw, row_start + 1, entry['service'], align='center')
+        line(draw, row_start + 1, entry['service'])
     if page > 0:
         line(draw, 6, "*:prev")
     line(draw, 6, "A:add", align="center")
@@ -120,13 +127,13 @@ def view(selected_entry_index, entries, selected_row, **args):
     line(draw, 1, "2:", invert=selected_row == 'username')
     line(draw, 1, username, 3)
     line(draw, 2, "3:", invert=selected_row == 'password')
-    line(draw, 2, password, 3, max_rows=3)
-    line(draw, 5, "A+#:edit")
-    line(draw, 5, "B:back", align="right")
+    line(draw, 2, password, 3, max_rows=4)
+    line(draw, 6, "A+#:edit")
+    line(draw, 6, "B:back", align="right")
     if selected_row:
-        line(draw, 6, "C+#:transmit", align="right")
+        line(draw, 7, "C+#:send", align="right")
     else:
-        line(draw, 6, "D+*(hold):delete", align="right")
+        line(draw, 7, "D+*(hold):delete", align="right")
 
 
 def edit(service, username, password, selected_row, **args):
