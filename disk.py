@@ -72,26 +72,27 @@ class Entries:
         self.hash_dir = user_data['hash_dir']
         self.set_error = set_error
         salt = get_salt(self.hash_dir, set_error)
-        password = bytes(pin, 'utf-8')
+        b_pin = bytes(pin, 'utf-8')
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
             iterations=100000,
         )
-        key = base64.urlsafe_b64encode(kdf.derive(password))
+        key = base64.urlsafe_b64encode(kdf.derive(b_pin))
         self.f = Fernet(key)
-        self.valid = True
+        self.valid = False
 
         pin_hash_path = os.path.join(self.hash_dir, ".eph")
         if user_data['is_new_user']: # save encrypted pin hash
             try:
                 f = open(pin_hash_path, "w")
-                b_hash = bcrypt.hashpw(password, bcrypt.gensalt(14))
+                b_hash = bcrypt.hashpw(b_pin, bcrypt.gensalt(14))
                 hash = b_hash.decode("utf-8")
                 eph = self.encrypt(hash)
                 data = eph.decode("utf-8")
                 f.write(data)
+                self.valid = True
             except:
                 if os.path.exists(pin_hash_path):
                     os.remove(pin_hash_path)
@@ -99,22 +100,26 @@ class Entries:
             finally:
                 f.close()
         elif os.path.exists(pin_hash_path): # check pin is correct
+            b_token = False
+            b_hash = False
             try:
                 hash = False
                 f = open(pin_hash_path, "r")
                 token = f.read()
                 b_token = bytes(token, 'utf-8')
-                data = self.decrypt(b_token)
-                hash = bytes(data, 'utf-8')
             except:
-                self.valid = False
+                set_error('Error opening pin hash')
             finally:
                 f.close()
-            if not hash or not bcrypt.checkpw(password, hash):
-                self.valid = False
+            try:
+                data = self.decrypt(b_token)
+                b_hash = bytes(data, 'utf-8')
+            except:
+                self.valid = False # does not decrypt with given pin
+            if b_hash and bcrypt.checkpw(b_pin, b_hash):
+                self.valid = True
         else: 
             set_error('Unable to locate encrypted pin hash!')
-            self.valid = False
 
     def encrypt(self, data):
         token = self.f.encrypt(bytes(data, 'utf-8'))
