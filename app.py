@@ -55,8 +55,10 @@ def render_view():
 
 
 def set_view(to):
-    state['view'] = to 
-    if to == 'browse':
+    state['view'] = to
+    if to not in ['lock', 'loading', 'error'] and state['storage'] == False:
+        set_view('lock')
+    elif to == 'browse':
         if len(state['entries']) > 0:
             state['selected_entry_index'] = False
             set_page_entry_indexes()
@@ -158,6 +160,7 @@ def handle_fn_keys(keys):
             elif state['view'] == 'view': # Back to browse view 
                 set_view('browse')
             elif state['view'] == 'browse' and 'longpress' in keys and '*' in keys: # lock device if has been held for 1 second
+                state['storage'] = False
                 set_view('lock')
         elif 'FN3' in keys: #C
             if state['view'] == 'lock' and 'longpress' in keys and '*' in keys: # power down if has been held for 1 second
@@ -168,26 +171,21 @@ def handle_fn_keys(keys):
                 # reset inputs, update states and return to browse view
                 exit_editing()
             elif state['view'] == 'error': # continue 
-                if len(state['entries'] > 0):
-                    # reset inputs, update states and return to browse view
-                    exit_editing()
-                else:
-                    set_view('lock')
+                # reset inputs, update states and return to browse view
+                exit_editing()
         elif 'FN4' in keys: #D
             if state['view'] == 'lock': 
                 if not state['inputting'] and state['user'] and state['pin']: # submit pin
                     state['loading_message'] = 'Logging in'
                     set_view('loading')
                     state['storage'] = Entries(state['pin'], state['user'], set_error)
-                    if not state['storage'].valid:
+                    if state['storage'].valid == False:
                         state['storage'] = False
-                    state['pin'] = ''
-                    state['user'] = ''
-                    if state['storage']:
-                        load_entries()
-                    else: 
+                        state['pin'] = ''
                         state['failed_login'] = True
-                        state['selected_row'] = 'user'
+                        set_view('lock')
+                    else:
+                        load_entries()
                 else: # done editing row
                     select_input_row([], False)
             elif state['view'] == 'edit':
@@ -205,7 +203,7 @@ def handle_fn_keys(keys):
                     select_input_row([], False)
             elif state['view'] == 'view' and 'longpress' in keys and '*' in keys: # delete entry if * has been held for 1 second
                 # Remove entry from state
-                state['entries'].remove(state['selected_entry_index'])
+                state['entries'].pop(state['selected_entry_index'])
                 # Save entries state to disk
                 save_entries()
             elif state['view'] == 'welcome':
@@ -256,7 +254,8 @@ def handle_keys(keys):
                 set_state_input(keys, valid_url_char)
             else: 
                 select_input_row(keys)
-            state['failed_login'] = False # Reset failed login indicator if active
+            if len(state['pin']) > 0: # Reset failed login indicator if active
+                state['failed_login'] = False
         elif state['view'] == 'browse':
             if not state['inputting']:
                 valid_row_keys = list(filter(lambda key : re.match(rf"[1-{state['results_per_page']}]", key) and len(state['page_entry_indexes']) >= int(key), keys))
@@ -276,8 +275,6 @@ def handle_keys(keys):
                 set_state_input(keys, valid_url_char)
             else:
                 select_input_row(keys)               
-        else: 
-            set_view('browse')
 
 
 def on_keypress(keys):
