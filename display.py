@@ -30,23 +30,27 @@ def line(draw, row, text, col = 0, invert = False, max_rows = 1, max_cols = char
             col_start = 1
         return col_start
 
-    col_start = calc_col_start(col, len(text))
-    text_end = col_start + (len(text) * font_size[0])
     row_start = (row * font_size[1]) - 2
-    row_end = row_start + (font_size[1] * ceil(len(text) / max_cols))
+    col_start = calc_col_start(col, len(text))
     if row + max_rows > lines:
         print(f"Warning: have allocated for {row + 1 + max_rows} lines but only {lines} line available to display text: {text}")
     if invert:
+        text_end = col_start + (len(text) * font_size[0])
+        row_end = row_start + (font_size[1] * ceil(len(text) / max_cols))
         draw.rectangle((col_start - 1, row_start + 1, text_end + 1, row_end + 1), fill)
         fill="black"
+    
+    last_end = 0
     for r in range(max_rows):
         if r > 0:
             col = 0
-        if len(text) > (r * max_cols) - col:
-            line_text = text[r * max_cols: ((r + 1) * max_cols) - col]
+        if len(text) > last_end:
+            end = last_end + (max_cols - col)
+            line_text = text[last_end: end]
+            last_end = end
             col_start = calc_col_start(col, len(line_text))
-            if r + 1 == max_rows and len(text) > (r + 1) * max_cols: # last row
-                line_text = line_text[0: max_cols - 3] + '...'
+            if r + 1 == max_rows and len(text) > last_end: # last row
+                line_text = line_text[0: max_cols - col  - 3] + '...'
             draw.text((col_start, row_start + (r * font_size[1])), line_text, fill)
 
 
@@ -123,15 +127,15 @@ def view(selected_entry_index, entries, selected_row, **args):
   with canvas(device) as draw:
     draw.rectangle(device.bounding_box, fill="black")
     line(draw, 0, "1:", invert=selected_row == 'service')
-    line(draw, 0, service, 3)
+    line(draw, 0, service, 2)
     line(draw, 1, "2:", invert=selected_row == 'username')
-    line(draw, 1, username, 3)
+    line(draw, 1, username, 2)
     line(draw, 2, "3:", invert=selected_row == 'password')
-    line(draw, 2, password, 3, max_rows=4)
+    line(draw, 2, password, 2, max_rows=4)
     line(draw, 6, "A+#:edit")
     line(draw, 6, "B:back", align="right")
     if selected_row:
-        line(draw, 7, "C+#:send", align="right")
+        line(draw, 7, "C+#:transmit", align="right")
     else:
         line(draw, 7, "D+*(hold):delete", align="right")
 
