@@ -2,8 +2,8 @@ from gpiozero import Button, OutputDevice
 import time
 
 # define pin numbers (BCM)
-row_pin_numbers = [19,25,24,23]
-col_pin_numbers = [26,22,27,17]
+row_pin_numbers = [5, 6, 13, 19]
+col_pin_numbers = [4, 17, 27, 22]
 key_code_layers = {
   'num': [
     [['1'],['2'],['3'],['FN1']],
