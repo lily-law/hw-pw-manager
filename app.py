@@ -135,6 +135,12 @@ def power_down():
     return
 
 
+def logout():
+    state['user'] = ''
+    state['pin'] = ''
+    state['storage'] = False
+    set_view('lock')
+
 def backspace():
     if state['selected_row'] in state.keys() and len(state[state['selected_row']]) > 0: # Backspace on inputing pin or entries
         state[state['selected_row']] = state[state['selected_row']][:-1]
@@ -160,8 +166,7 @@ def handle_fn_keys(keys):
             elif state['view'] == 'view': # Back to browse view 
                 set_view('browse')
             elif state['view'] == 'browse' and 'longpress' in keys and '*' in keys: # lock device if has been held for 1 second
-                state['storage'] = False
-                set_view('lock')
+                logout()
         elif 'FN3' in keys: #C
             if state['view'] == 'lock' and 'longpress' in keys and '*' in keys: # power down if has been held for 1 second
                power_down()
