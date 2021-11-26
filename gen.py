@@ -54,7 +54,7 @@ def password (nWords=8, max_chars=64, acronym=False):
         mywords = xp.generate_wordlist(wordfile=wordfile)
         gen = xp.generate_xkcdpassword(mywords, numwords=nWords, acrostic=acronym, delimiter=passprase_delimiters[rng.randrange(len(passprase_delimiters))])
 
-        return (gen[1: len(gen)-1])
+        return gen
     else: # give password
         gen = ''
         for i in range(max_chars):
