@@ -80,7 +80,10 @@ def set_view(to):
 
 def set_page_entry_indexes():
     start = state['page'] * state['results_per_page']
-    state['page_entry_indexes'] = range(start, start + state['results_per_page'])
+    end = start + state['results_per_page']
+    if end > len(state['entries']) - 1:
+        end = len(state['entries']) - 1
+    state['page_entry_indexes'] = range(start, end)
     render_view()
 
 
