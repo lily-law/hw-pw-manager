@@ -11,6 +11,8 @@ import binascii
 
 base_dir = "./"
 app_data_dir = os.path.join(base_dir, "__appdata__/")
+if not app_data_dir: # make dir if it doesn't exist
+        os.mkdir(app_data_dir)
 salt_file_name = ".salt"
 
 hash_cost = 12
