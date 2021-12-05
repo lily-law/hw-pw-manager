@@ -1,0 +1,13 @@
+[Unit]
+Description=hw-pw-manager
+
+[Service]
+Type=simple
+User=pi
+Group=sudo
+WorkingDirectory=/home/pi/hw-pw-manager
+ExecStart=/usr/bin/python3 /home/pi/hw-pw-manager/app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
