@@ -32,5 +32,49 @@ Entries are encrypted on the device by a lock pin. You can create multiple login
 - Python3
 - PIP3
 - cryptography (python built in library)
-
 - [xkcdpass](https://pypi.org/project/xkcdpass/) for passphrase generation
+
+## Summery of files
+<details>
+    <summary>app.py</summary>
+    <ul>
+        <li>Controller and state holders</li>
+        <li>Handles output from keypad</li>
+        <li>Set views on the display via display.py</li>
+    </ul>
+</details>
+<details>
+    <summary>disk.py</summary>
+    <ul>
+        <li>Handles saving data</li>
+        <li>Creates and retrieves files for each user using hashing</li>
+        <li>Decrypts/encrypts data</li>
+    </ul>
+</details>
+<details>
+    <summary>display.py</summary>
+    <ul>
+        <li>UI views</li>
+        <li>Displays output to OLED display</li>
+</details>
+<details>
+    <summary>gen.py</summary>
+    <ul>
+        <li>Service name generation</li>
+        <li>User name generation</li>
+        <li>Password generation</li>
+    </ul>
+</details>
+<details>
+    <summary>keypad.py</summary>
+    <ul>
+        <li>Scans keypad matrix for key presses and releases</li>
+    </ul>
+</details>
+<details>
+    <summary>output.py</summary>
+    <ul>
+        <li>Sends strings out through serial port</li>
+    </ul>
+</details>
+
