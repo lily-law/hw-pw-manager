@@ -1,8 +1,10 @@
 # Hardware Password Manager
-Hardware password manager with isolated (output only) HID USB interface. 
+
+#### Video Demo: https://youtu.be/S4_pITpOw2c
+#### Description: Hardware password manager with isolated (output only) HID USB interface. 
 - Store, index, and generate secure passwords and usernames for services
 - More secure and convenient then writing login details down
-- Plug in to a USB port, paste entries out through keyboard emulation hardware
+- Plug in to a USB port, paste entries out through the keyboard emulation hardware
 - Portable across systems and at boot time (BIOS passwords, hdd decryption...)
 - More secure then online password managers
 
